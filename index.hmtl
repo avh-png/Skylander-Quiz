@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skylanders Quiz</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #1a0826;
+            color: white;
+            overflow-x: hidden;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            margin: 0;
+            padding: 24px;
+            box-sizing: border-box;
+            background: #0097d5;
+            transition: background-color 1.8s linear;
+            border-radius: 0;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #homeScreen, #elementsScreen {
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 0;
+            gap: 28px;
+        }
+        #homeScreen.hidden, #elementsScreen.hidden {
+            display: none;
+        }
+        #quizScreen:not(.hidden) {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        .quiz-topbar {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+        .quiz-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
+        .quiz-controls input[type="text"] {
+            flex: 1 1 260px;
+            max-width: 420px;
+            margin-bottom: 0;
+            padding: 8px;
+            font-size: 16px;
+        }
+        .quiz-controls .input-wrap {
+            position: relative;
+            display: flex;
+            flex: 1 1 260px;
+            max-width: 420px;
+        }
+        .quiz-controls .input-wrap input[type="text"] { flex: 1 1 auto; max-width: none; }
+        #shuffleGhost {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+            pointer-events: none;
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #112e3e;
+        }
+        #shuffleGhost.hidden { display: none; }
+        .quiz-controls #typeShuffleBtn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 3px solid #112e3e;
+            background: #a58bd6;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .quiz-controls #typeShuffleBtn.on {
+            border-color: white;
+            box-shadow: 0 0 10px rgba(255,255,255,.8);
+        }
+        .quiz-controls #typeShuffleBtn:disabled { opacity: .5; cursor: default; }
+        #typeToast {
+            position: fixed;
+            left: 50%;
+            bottom: 90px;
+            transform: translateX(-50%);
+            background: rgba(4, 18, 30, 0.9);
+            border: 2px solid #71cbd6;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 14px;
+            border-radius: 8px;
+            z-index: 9998;
+            transition: opacity .25s ease;
+        }
+        #typeToast.hidden { display: none; }
+        .quiz-controls #giveUpBtn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 3px solid #112e3e;
+            background: #71cbd6;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .quiz-controls #pauseBtn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 3px solid #112e3e;
+            background: #f5c542;
+            color: #112e3e;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .quiz-controls #pauseBtn:disabled { opacity: .5; cursor: default; }
+        #pauseOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 18, 30, 0.88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        #pauseOverlay.hidden { display: none; }
+        .pause-box {
+            background: #0e2a3b;
+            border: 4px solid #71cbd6;
+            border-radius: 14px;
+            padding: 32px 40px;
+            text-align: center;
+            color: #fff;
+            box-shadow: 0 0 40px rgba(113, 203, 214, .5);
+        }
+        .pause-box h2 { margin: 0 0 8px; font-size: 40px; }
+        .pause-box p { margin: 0 0 20px; opacity: .85; }
+        .pause-box button {
+            display: block;
+            width: 260px;
+            margin: 10px auto;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 3px solid #112e3e;
+            background: #71cbd6;
+            color: #fff;
+            font-weight: bold;
+            font-size: 17px;
+            cursor: pointer;
+        }
+        .pause-box button:hover { filter: brightness(1.1); }
+        .quiz-controls .toggle-container { margin: 0; }
+        .quiz-controls #restartBtn,
+        .quiz-controls #backHomeBtn { margin-top: 0; }
+        
+        .filter-buttons {
+            margin-bottom: 0;
+            width: 100%;
+            max-width: 1100px;
+        }
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .btn-row .filter-btn {
+            flex: 1 1 220px;
+            max-width: 280px;
+            padding: 16px 0;
+            box-sizing: border-box;
+        }
+        .home-hero h1 {
+            margin: 0;
+            font-size: 72px;
+            text-shadow: 0 0 18px rgba(0,0,0,0.45);
+        }
+        #elementsScreen h1 {
+            margin: 0;
+            font-size: 64px;
+            text-shadow: 0 0 18px rgba(0,0,0,0.45);
+        }
+        #startBtn, #startElementBtn {
+            padding: 18px 36px;
+            font-size: 24px;
+            border-radius: 8px;
+            border: 3px solid #112e3e;
+            background: #dec306;
+            color: #112e3e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+        #startBtn:hover, #startElementBtn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+        #backHomeBtn, #elementsBackBtn {
+            background-color: #dec306;
+            color: #112e3e;
+            border: 3px solid #112e3e;
+            padding: 14px 26px;
+            margin-top: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+        #backHomeBtn:hover, #elementsBackBtn:hover { transform: scale(1.05); filter: brightness(1.1); }
+        #restartBtn {
+            background-color: #71cbd6;
+            color: white;
+            border: 3px solid #112e3e;
+            padding: 8px 15px;
+            margin-top: 0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #restartBtn:hover { filter: brightness(1.1); }
+        #quizTitle {
+            font-size: 26px;
+            margin: 0;
+            color: white;
+            text-shadow: 0 0 8px rgba(0,0,0,0.5);
+        }
+        .element-btn {
+            color: white;
+            border: 3px solid #112e3e;
+            padding: 18px 15px;
+            margin: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 20px;
+            flex: 1 1 220px;
+            max-width: 280px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .element-btn:hover { filter: brightness(1.15); transform: scale(1.04); }
+        
+        .element-btn.active {
+            border-color: white !important;
+            transform: scale(1.06);
+            animation: portalGlow 1.5s infinite;
+        }
+        
+        .element-btn.active.playing {
+            transform: none;
+            animation: none;
+            box-shadow: none;
+            border-color: #dec306 !important;
+        }
+        .el-earth { background-color: #b1701f; border-color: #975907; }
+        .el-air   { background-color: #3fbaf7; border-color: #25a0f2; }
+        .el-fire  { background-color: #e61a1d; border-color: #cc0101; }
+        .el-water { background-color: #1b4c8d; border-color: #023576; }
+        .el-magic { background-color: #6f418a; border-color: #592972; }
+        .el-tech  { background-color: #f5812b; border-color: #e66b15; }
+        .el-life  { background-color: #18b125; border-color: #01980c; }
+        .el-undead{ background-color: #65636f; border-color: #4e4c58; }
+        .el-light { background-color: #fce14f; border-color: #fac936; }
+        .el-dark  { background-color: #243d5c; border-color: #0d2345; }
+        .el-kaos  { background-color: #493e71; border-color: #31275a; }
+        .filter-btn {
+            background-color: #71cbd6;
+            color: white;
+            border: 3px solid #112e3e;
+            padding: 16px 15px;
+            margin: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+      
+        .filter-btn.active {
+            background-color: #58b9ca;
+            border-color: white;
+            color: white;
+            transform: scale(1.05);
+            animation: portalGlow 1.5s infinite;
+        }
+
+      
+        .filter-btn.active.playing {
+            transform: none;
+            animation: none;
+            box-shadow: none;
+            border-color: #dec306;
+        }
+        @keyframes portalGlow {
+            0% { box-shadow: 0 0 5px white, 0 0 10px white; }
+            50% { box-shadow: 0 0 10px white, 0 0 25px white, 0 0 45px rgba(255,255,255,0.9); }
+            100% { box-shadow: 0 0 5px white, 0 0 10px white; }
+        }
+        input {
+            padding: 10px;
+            font-size: 18px;
+            width: 80%;
+            border-radius: 5px;
+            border: none;
+            margin-bottom: 20px;
+        }
+        .stats {
+            font-size: 18px;
+            margin: 0;
+        }
+       
+        .found-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(var(--card-size, 50px), 100%), var(--card-size, 50px)));
+            justify-content: center;
+            gap: var(--card-gap, 6px);
+            margin-top: 6px;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            align-content: start;
+            padding: 6px;
+            background: rgba(0,0,0,0.18);
+            border-radius: 8px;
+        }
+        .skylander-card {
+            perspective: 500px;
+            aspect-ratio: 3 / 4;
+            width: 100%;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+        .skylander-card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+        .card-front {
+            background: #000;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+        .card-back {
+            transform: rotateY(180deg);
+            background: #2e7d32;
+        }
+        .skylander-card.missed .card-back { background: #801313; }
+        .card-back img {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            object-fit: contain;
+        }
+        .card-back span {
+            font-size: var(--card-font, 7px);
+            line-height: 1.1;
+            word-break: break-word;
+        }
+        .win-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        }
+
+        .win-text {
+        font-size: 50px;
+        font-weight: bold;
+        color: gold;
+        text-shadow: 0 0 10px white, 0 0 30px gold;
+        animation: winPop 1.2s ease-out forwards;
+        }
+        
+        @keyframes winPop {
+        0% {
+        transform: scale(0.3);
+        opacity: 0;
+        }
+        60% {
+        transform: scale(1.2);
+        opacity: 1;
+        }
+        100% {
+        transform: scale(1);
+        opacity: 1;
+        }
+        }
+
+        .hidden {
+        display: none;
+        }
+        #siteFootnote {
+            background: #0e2a3b;
+            border-top: 3px solid #112e3e;
+            padding: 16px 24px 22px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #dfe9ee;
+        }
+        #siteFootnote p { margin: 5px 0; }
+        #siteFootnote .footnote-small { font-size: 11.5px; opacity: .85; }
+        #siteFootnote a { color: #71cbd6; font-weight: bold; }
+        .toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 15px 0;
+    font-weight: bold;
+}
+
+.toggle-label {
+    color: white;
+    font-size: 14px;
+}
+
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #444;
+    transition: 0.3s;
+    border-radius: 34px;
+}
+
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+
+input:checked + .slider {
+    background-color: #58b9ca;
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+        .corner-actions { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
+        .corner-actions button { padding: 10px 16px; border-radius: 8px; border: 3px solid #112e3e; background: #f5c542; color: #112e3e; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .corner-actions button.alt { background: #71cbd6; color: #fff; }
+        .corner-actions button:hover { filter: brightness(1.1); }
+        #homeScreen.hidden ~ .corner-actions, body.not-home .corner-actions { display: none; }
+        #builderScreen { overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+        #builderScreen.hidden { display: none; }
+        #builderTitle { padding: 10px; font-size: 18px; border-radius: 8px; border: 3px solid #112e3e; width: 320px; max-width: 90%; }
+        .builder-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 16px; max-width: 1100px; }
+        .builder-card { width: 230px; background: #0e2a3b; border: 3px solid #71cbd6; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; position: relative; text-align: left; }
+        .builder-card label { font-size: 12px; font-weight: bold; opacity: .85; }
+        .builder-card input { padding: 7px; border-radius: 6px; border: 2px solid #112e3e; font-size: 14px; }
+        .builder-card .preview { height: 70px; display: flex; align-items: center; justify-content: center; }
+        .builder-card .preview img { max-height: 70px; max-width: 100%; }
+        .builder-card .remove { position: absolute; top: 4px; right: 8px; background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; opacity: .7; }
+        .add-circle { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #112e3e; background: #f5c542; color: #112e3e; font-size: 36px; font-weight: bold; cursor: pointer; line-height: 1; }
+        .add-circle:hover { filter: brightness(1.1); }
+        .builder-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; padding-bottom: 20px; }
+        .builder-actions button { padding: 12px 20px; border-radius: 8px; border: 3px solid #112e3e; background: #71cbd6; color: #fff; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .builder-actions button.download { background: #f5c542; color: #112e3e; }
+        :root { --builder-choice-bg: #0e2a3b; --builder-choice-accent: #71cbd6; --builder-choice-text: #fff; --builder-choice-border: #112e3e; }
+        .builder-import { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+        .builder-import button { padding: 10px 16px; border-radius: 8px; border: 3px solid var(--builder-choice-border); background: var(--builder-choice-accent); color: var(--builder-choice-text); font-weight: bold; font-size: 15px; cursor: pointer; }
+        #builderQuizChoices { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 850px; }
+        #builderQuizChoices.hidden { display: none; }
+        #builderQuizChoices button { background: var(--builder-choice-bg); border-color: var(--builder-choice-accent); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="homeScreen" class="home-hero">
+        <div class="corner-actions">
+            <button onclick="openBuilder()">Build your own quiz</button>
+            <button class="alt" onclick="document.getElementById('customQuizInput').click()">Custom quiz</button>
+            <input type="file" id="customQuizInput" accept=".json,application/json" style="display:none" onchange="loadCustomQuiz(event)">
+        </div>
+        <h1>Skylanders Quiz</h1>
+
+        <div class="filter-buttons">
+            <div class="btn-row">
+                <button class="filter-btn active" onclick="changeGeneration('gll', this)">All Skylanders</button>
+            </div>
+            <div class="btn-row">
+                <button class="filter-btn" onclick="changeGeneration('spyros_adventure', this)">Spyro's Adventure</button>
+                <button class="filter-btn" onclick="changeGeneration('giants', this)">Giants</button>
+                <button class="filter-btn" onclick="changeGeneration('swap_force', this)">Swap Force</button>
+            </div>
+            <div class="btn-row">
+                <button class="filter-btn" onclick="changeGeneration('trap_team', this)">Trap Team</button>
+                <button class="filter-btn" onclick="changeGeneration('superchargers', this)">SuperChargers</button>
+                <button class="filter-btn" onclick="changeGeneration('imaginators', this)">Imaginators</button>
+            </div>
+            <div class="btn-row">
+                <button class="filter-btn" onclick="changeGeneration('vehicles', this)">Vehicles</button>
+                <button class="filter-btn" onclick="changeGeneration('trap_villain', this)">Trappable Villains</button>
+            </div>
+ <div class="btn-row">
+    <button id="elementsBtn" class="filter-btn" onclick="showElementsScreen()">
+        Elements
+    </button>
+</div>
+        </div>
+
+        <button id="startBtn" onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="builderScreen" class="hidden">
+        <h1>Build your own quiz</h1>
+        <input type="text" id="builderTitle" placeholder="Quiz title" value="My Custom Quiz">
+        <div class="builder-import">
+            <button id="addQuizBtn" onclick="toggleBuilderQuizChoices()" aria-expanded="false" aria-controls="builderQuizChoices">Add quiz</button>
+            <div id="builderQuizChoices" class="hidden" aria-label="Choose a quiz"></div>
+            <span id="builderImportStatus" role="status"></span>
+        </div>
+        <div class="builder-grid" id="builderGrid"></div>
+        <div class="builder-actions">
+            <button class="download" onclick="downloadCustomQuiz()">Download quiz</button>
+            <button onclick="closeBuilder()">Back to Home</button>
+        </div>
+    </div>
+
+    <div id="elementsScreen" class="hidden">
+        <h1>Choose an Element</h1>
+        <div class="filter-buttons">
+            <div class="btn-row">
+                <button class="element-btn el-earth"  onclick="startElementQuiz('earth', this)">Earth</button>
+                <button class="element-btn el-air"    onclick="startElementQuiz('air', this)">Air</button>
+                <button class="element-btn el-fire"   onclick="startElementQuiz('fire', this)">Fire</button>
+            </div>
+            <div class="btn-row">
+                <button class="element-btn el-water"  onclick="startElementQuiz('water', this)">Water</button>
+                <button class="element-btn el-magic"  onclick="startElementQuiz('magic', this)">Magic</button>
+                <button class="element-btn el-tech"   onclick="startElementQuiz('tech', this)">Tech</button>
+            </div>
+            <div class="btn-row">
+                <button class="element-btn el-life"   onclick="startElementQuiz('life', this)">Life</button>
+                <button class="element-btn el-undead" onclick="startElementQuiz('undead', this)">Undead</button>
+                <button class="element-btn el-light"  onclick="startElementQuiz('light', this)">Light</button>
+            </div>
+            <div class="btn-row">
+                <button class="element-btn el-dark"   onclick="startElementQuiz('dark', this)">Dark</button>
+                <button class="element-btn el-kaos"   onclick="startElementQuiz('kaos', this)">Kaos</button>
+            </div>
+        </div>
+        <button id="startElementBtn" onclick="startElementGame()">Start Game</button>
+        <br>
+        <button id="elementsBackBtn" onclick="backToHomeFromElements()">Back to Home</button>
+    </div>
+
+    <div id="quizScreen" class="hidden">
+    <div class="quiz-topbar">
+        <h2 id="quizTitle">Quiz</h2>
+        <div class="stats">
+            Score: <span id="score">0</span> / <span id="total">0</span> |
+            <span id="timerLabel">Time Left</span>: <span id="timer">00:02:00</span>
+        </div>
+    </div>
+
+    <div class="quiz-controls">
+        <div class="input-wrap">
+            <input type="text" id="guessInput" placeholder="Select a generation and press start..." disabled>
+            <span id="shuffleGhost" class="hidden"></span>
+        </div>
+        <button id="typeShuffleBtn" onclick="toggleTypeShuffle()" disabled>Type-Shuffle</button>
+        <button id="giveUpBtn" onclick="giveUp()" disabled>Give Up</button>
+        <button id="restartBtn" onclick="startGame()">Restart</button>
+        <div class="toggle-container">
+            <span class="toggle-label">Stopwatch</span>
+            <label class="switch">
+                <input type="checkbox" id="timerToggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Countdown</span>
+        </div>
+        <label class="toggle-label" for="timeInput">Time:</label>
+        <input type="number" id="timeInput" value="120" min="1" style="width:70px;">
+        <span class="toggle-label">min</span>
+        <button id="pauseBtn" onclick="pauseGame()" disabled>Pause</button>
+        <button id="backHomeBtn" onclick="backToHome()">Home</button>
+    </div>
+
+    <div class="found-list" id="foundList"></div>
+    </div>
+
+    <div id="pauseOverlay" class="hidden">
+        <div class="pause-box">
+            <h2>Paused</h2>
+            <p>Save your progress or load an earlier game file.</p>
+            <button onclick="resumeGame()">Resume</button>
+            <button onclick="saveGame()">Save Game File</button>
+            <button onclick="document.getElementById('loadFileInput').click()">Load Game File</button>
+            <button onclick="quitFromPause()">Quit to Home</button>
+            <input type="file" id="loadFileInput" accept=".json,application/json" style="display:none" onchange="loadGameFile(event)">
+        </div>
+    </div>
+</div>
+
+<div id="typeToast" class="hidden"></div>
+
+<div id="winOverlay" class="win-overlay hidden">
+    <div id="winText" class="win-text">PORTAL MASTER!</div>
+</div>
+
+<footer id="siteFootnote" class="hidden">
+    <p>A project of AvHNinjaPower. This website is just up so if you found a bug or you have an idea for an improvement please let me know through this <a href="https://forms.gle/BhSi7fdiRE1swxwdA" target="_blank" rel="noopener">form</a>.</p>
+    <p>Please support me on <a href="https://ko-fi.com/avhninjapower" target="_blank" rel="noopener">ko-fi</a> so I can keep the website running.</p>
+    <p>I do not own the rights of the pictures yet so if you know anyone who can help me with obtaining them, please contact me using the form above.</p>
+    <p>This quiz is an unofficial, non-commercial fan project and is not affiliated with, endorsed, sponsored, or specifically approved by Activision Publishing, Inc. or Microsoft Corporation.</p>
+    <p>Skylanders and all related character names, images, and trademarks belong to Activision Publishing, Inc. / Microsoft Corporation.</p>
+</footer>
+
+
+<script>
+    const skylandersData = {
+        spyros_adventure: [
+            { name: "bash", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/e/e6/Bash_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173914" },
+            { name: "boomer", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/b/b4/Boomer_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174351" },
+            { name: "camo", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/1/14/Camo_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173715" },
+            { name: "chop chop", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/c/c5/Chop_Chop_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173913" },
+            { name: "cynder", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/a/af/Cynder_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173914" },
+            { name: "dino-rang", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/6/6d/Dino-Rang_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173915" },
+            { name: "double trouble", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/3/33/Double_Trouble_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174351" },
+            { name: "drill sergeant", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/a/a0/Drill_Sergeant_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174352" },
+            { name: "drobot", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/f/f6/Drobot_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174352" },
+            { name: "eruptor", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/0/0c/Eruptor_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174141" },
+            { name: "flameslinger", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/9/97/Flameslinger_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174141" },
+            { name: "ghost roaster", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/0/08/Ghost_Roaster_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173913" },
+            { name: "gill grunt", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/9/94/Gill_Grunt_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174142" },
+            { name: "hex", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/1/1d/Hex_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173913" },
+            { name: "ignitor", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/4/44/Ignitor_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174142" },
+            { name: "lightning rod", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/9/91/Lightning_Rod_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173714" },
+            { name: "prism break", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/c/c3/Prism_Break_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173914" },
+            { name: "slam bam", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/e/e4/Slam_Bam_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174143" },
+            { name: "sonic boom", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/d/dd/Sonic_Boom_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173713" },
+            { name: "spyro", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/1/11/Spyro_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174350" },
+            { name: "stealth elf", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/a/a2/Stealth_Elf_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173714" },
+            { name: "stump smash", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/4/4c/Stump_Smash_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173715" },
+            { name: "sunburn", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/8/84/Sunburn_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174142" },
+            { name: "terrafin", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/b/b1/Terrafin_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173915" },
+            { name: "trigger happy", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/0/05/Trigger_Happy_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174351" },
+            { name: "voodood", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/9/93/Voodood_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174350" },
+            { name: "warnado", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/e/ee/Warnado_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173714" },
+            { name: "wham-shell", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/b/b7/Wham-Shell_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174143" },
+            { name: "whirlwind", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/f/f4/Whirlwind_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173714" },
+            { name: "wrecking ball", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/b/bc/Wrecking_Ball_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174350" },
+            { name: "zap", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/1/1e/Zap_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174143" },
+            { name: "zook", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/5/54/Zook_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821173715" }
+        ],
+        giants: [
+            { name: "bouncer", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/4/47/Bouncer_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174846" },
+            { name: "crusher", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/5/56/Crusher_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174611" },
+            { name: "eye-brawl", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/5/5e/Eye-Brawl_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174611" },
+            { name: "hot head", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/a/a2/Hot_Head_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174844" },
+            { name: "ninjini", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/c/c6/Ninjini_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174845" },
+            { name: "swarm", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/1/1c/Swarm_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174609" },
+            { name: "thumpback", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/7/72/Thumpback_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174845" },
+            { name: "tree rex", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/7/7d/Tree_Rex_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174610" },
+            { name: "chill", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/0/0c/Chill_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174845" },
+            { name: "flashwing", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/1/13/Flashwing_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174612" },
+            { name: "fright rider", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/6/68/Fright_Rider_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174611" },
+            { name: "hot dog", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/2/20/Hot_Dog_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174844" },
+            { name: "jet-vac", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/c/cc/Jet-Vac_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174610" },
+            { name: "pop fizz", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/9/93/Pop_Fizz_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174845" },
+            { name: "shroomboom", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/3/3a/Shroomboom_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174610" },
+            { name: "sprocket", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/1/19/Sprocket_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821174846" }
+        ],
+        swap_force: [
+            { name: "blast zone", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/7/72/Blast_Zone_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175618" },
+            { name: "boom jet", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/2/26/Boom_Jet_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175112" },
+            { name: "doom stone", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/e/ea/Doom_Stone_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175357" },
+            { name: "fire kraken", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/a/a6/Fire_Kraken_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175618" },
+            { name: "free ranger", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/b/ba/Free_Ranger_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175112" },
+            { name: "freeze blade", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/4/42/Freeze_Blade_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175619" },
+            { name: "grilla drilla", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/e/e5/Grilla_Drilla_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175114" },
+            { name: "hoot loop", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/2/2d/Hoot_Loop_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175902" },
+            { name: "magna charge", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/1/1d/Magna_Charge_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175903" },
+            { name: "night shift", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/d/d9/Night_Shift_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175355" },
+            { name: "rattle shake", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/4/4f/Rattle_Shake_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175355" },
+            { name: "rubble rouser", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/6/67/Rubble_Rouser_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175356" },
+            { name: "spy rise", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/a/a0/Spy_Rise_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175903" },
+            { name: "stink bomb", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/d/d8/Stink_Bomb_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175113" },
+            { name: "trap shadow", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/3/3f/Trap_Shadow_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175902" },
+            { name: "wash buckler", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/0/0c/Wash_Buckler_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175619" },
+            { name: "bumble blast", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/a/ad/Bumble_Blast_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175114" },
+            { name: "countdown", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/b/ba/Countdown_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175904" },
+            { name: "dune bug", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/f/f3/Dune_Bug_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175903" },
+            { name: "fryno", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/4/4f/Fryno_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175618" },
+            { name: "grim creeper", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/b/b8/Grim_Creeper_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175356" },
+            { name: "pop thorn", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/b/b4/Pop_Thorn_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175113" },
+            { name: "punk shock", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/9/96/Punk_Shock_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175620" },
+            { name: "rip tide", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/c/c3/Rip_Tide_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175620" },
+            { name: "roller brawl", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/b/b1/Roller_Brawl_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175356" },
+            { name: "scorp", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/c/c6/Scorp_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175357" },
+            { name: "scratch", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/7/73/Scratch_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175113" },
+            { name: "slobber tooth", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/0/08/Slobber_Tooth_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175357" },
+            { name: "smolderdash", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/c/ce/Smolderdash_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175619" },
+            { name: "star strike", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/0/03/Star_Strike_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175902" },
+            { name: "wind-up", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/5/5a/Wind-Up_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175904" },
+            { name: "zoo lou", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/9/90/Zoo_Lou_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821175114" }
+        ],
+        trap_team:  [
+            { name: "blastermind", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/e/e6/Blastermind_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180956" },
+            { name: "bushwhack", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/1/12/Bushwhack_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180218" },
+            { name: "enigma", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/a/a1/Enigma_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180957" },
+            { name: "gearshift", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/9/97/Gearshift_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180958" },
+            { name: "gusto", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/e/ee/Gusto_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180216" },
+            { name: "head rush", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/c/cc/Head_Rush_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180504" },
+            { name: "jawbreaker", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/9/9c/Jawbreaker_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180958" },
+            { name: "ka-boom", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/a/ac/Ka-Boom_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180746" },
+            { name: "knight light", element: "light", image: "https://static.wikia.nocookie.net/skylanders/images/1/16/Knight_Light_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181127" },
+            { name: "knight mare", element: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/4/42/Knight_Mare_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181127" },
+            { name: "krypt king", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/c/cb/Krypt_King_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180503" },
+            { name: "lob-star", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/a/ac/Lob-Star_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180747" },
+            { name: "short cut", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/1/13/Short_Cut_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180503" },
+            { name: "snap shot", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/6/69/Snap_Shot_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180747" },
+            { name: "thunderbolt", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/2/2e/Thunderbolt_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180217" },
+            { name: "tuff luck", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/9/96/Tuff_Luck_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180218" },
+            { name: "wallop", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/f/f8/Wallop_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180504" },
+            { name: "wildfire", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/e/e5/Wildfire_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180746" },
+            { name: "bat spin", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/f/f1/Bat_Spin_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180504" },
+            { name: "blackout", element: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/9/92/Blackout_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181128" },
+            { name: "blades", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/1/12/Blades_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180217" },
+            { name: "chopper", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/b/bc/Chopper_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180958" },
+            { name: "cobra cadabra", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/5/59/Cobra_Cadabra_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180957" },
+            { name: "deja vu", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/d/d5/D%C3%A9j%C3%A0_Vu_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180957" },
+            { name: "echo", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/f/fb/Echo_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180747" },
+            { name: "fist bump", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/7/78/Fist_Bump_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180505" },
+            { name: "fling kong", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/4/46/Fling_Kong_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180217" },
+            { name: "flip wreck", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/e/e9/Flip_Wreck_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180748" },
+            { name: "food fight", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/a/aa/Food_Fight_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180218" },
+            { name: "funny bone", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/d/db/Funny_Bone_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180503" },
+            { name: "high five", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/b/b6/High_Five_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180219" },
+            { name: "rocky roll", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/9/9f/Rocky_Roll_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180505" },
+            { name: "spotlight", element: "light", image: "https://static.wikia.nocookie.net/skylanders/images/5/54/Spotlight_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181127" },
+            { name: "torch", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/7/71/Torch_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180746" },
+            { name: "trail blazer", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/4/4d/Trail_Blazer_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180747" },
+            { name: "tread head", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/b/b3/Tread_Head_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821180958" },
+            { name: "barkley", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/a/af/Barkley_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181343" },
+            { name: "bop", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/5/5a/Bop_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181344" },
+            { name: "breeze", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/f/f8/Breeze_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181342" },
+            { name: "drobit", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/5/52/Drobit_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181628" },
+            { name: "eye small", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/e/e6/Eye-Small_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181343" },
+            { name: "gill runt", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/3/35/Gill_Runt_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181626" },
+            { name: "hijinx", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/e/eb/Hijinx_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181343" },
+            { name: "mini jini", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/2/2a/Mini-Jini_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181627" },
+            { name: "pet vac", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/9/91/Pet-Vac_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181342" },
+            { name: "small fry", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/c/cb/Small_Fry_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181626" },
+            { name: "spry", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/8/8b/Spry_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181627" },
+            { name: "terrabite", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/a/a4/Terrabite_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181344" },
+            { name: "thumpling", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/7/7c/Thumpling_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181627" },
+            { name: "trigger snappy", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/5/5a/Trigger_Snappy_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181627" },
+            { name: "weeruptor", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/3/38/Weeruptor_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181626" },
+            { name: "whisper elf", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/0/03/Whisper_Elf_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181342" }
+        ],
+        superchargers:  [
+            { name: "astroblast", element: "light", image: "https://static.wikia.nocookie.net/skylanders/images/4/42/Astroblast_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182330" },
+            { name: "big bubble pop fizz", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/c/cd/Big_Bubble_Pop_Fizz_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182153" },
+            { name: "bone bash roller brawl", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/2/27/Bone_Bash_Roller_Brawl_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181938" },
+            { name: "deep dive gill grunt", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/d/d5/Deep_Dive_Gill_Grunt_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182152" },
+            { name: "dive-clops", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/0/04/Dive-Clops_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182152" },
+            { name: "double dare trigger happy", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/a/ae/Double_Dare_Trigger_Happy_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182153" },
+            { name: "fiesta", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/b/b6/Fiesta_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181938" },
+            { name: "hammer slam bowser", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/a/a7/Hammer_Slam_Bowser_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182151" },
+            { name: "high volt", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/c/c3/High_Volt_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182153" },
+            { name: "hurricane jet-vac", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/e/ef/Hurricane_Jet-Vac_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181937" },
+            { name: "lava lance eruptor", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/2/23/Lava_Lance_Eruptor_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182151" },
+            { name: "nightfall", element: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/4/4a/Nightfall_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182331" },
+            { name: "shark shooter terrafin", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/7/7f/Shark_Shooter_Terrafin_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181939" },
+            { name: "smash hit", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/3/3b/Smash_Hit_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181939" },
+            { name: "spitfire", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/f/f9/Spitfire_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182151" },
+            { name: "splat", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/1/1f/Splat_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821182152" },
+            { name: "stormblade", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/c/c4/Stormblade_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181937" },
+            { name: "super shot stealth elf", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/a/a1/Super_Shot_Stealth_Elf_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181937" },
+            { name: "turbo charge donkey kong", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/c/c2/Turbo_Charge_Donkey_Kong_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821181938" }
+        ],
+        imaginators:    [
+            { name: "air strike", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/c/ce/Air_Strike_Icon.png/revision/latest/scale-to-width-down/90?cb=20161012201312" },
+            { name: "ambush", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/7/72/Ambush_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183636" },
+            { name: "aurora", element: "light", image: "https://static.wikia.nocookie.net/skylanders/images/f/f4/Aurora_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821184030" },
+            { name: "barbella", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/8/87/Barbella_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183638" },
+            { name: "boom bloom", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/a/a8/Boom_Bloom_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052556" },
+            { name: "buckshot", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/e/ed/Buckshot_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052712" },
+            { name: "chain reaction", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/2/24/Chain_Reaction_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052713" },
+            { name: "chopscotch", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/0/0b/Chopscotch_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183637" },
+            { name: "crash bandicoot", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/c/c5/Crash_Bandicoot_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183637" },
+            { name: "dr. neo cortex", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/3/35/Dr._Neo_Cortex_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183853" },
+            { name: "ember", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/c/ce/Ember_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183851" },
+            { name: "flare wolf", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/3/3f/Flare_Wolf_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052556" },
+            { name: "king pen", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/7/75/King_Pen_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183852" },
+            { name: "mysticat", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/1/1a/Mysticat_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183852" },
+            { name: "pit boss", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/f/f0/Pit_Boss_Icon.png/revision/latest/scale-to-width-down/90?cb=20160925011617" },
+            { name: "ro-bow", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/0/01/Ro-Bow_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052712" },
+            { name: "starcast", element: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/1/14/Starcast_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821184030" },
+            { name: "tidepool", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/d/dc/Tidepool_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052711" },
+            { name: "tri-tip", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/d/d9/Tri-Tip_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183638" },
+            { name: "wild storm", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/7/7c/Wild_Storm_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052555" },
+            { name: "bad juju", element: "air", image: "https://static.wikia.nocookie.net/skylanders/images/e/e1/Bad_Juju_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052555" },
+            { name: "blaster-tron", element: "light", image: "https://static.wikia.nocookie.net/skylanders/images/e/e1/Blaster-Tron_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052713" },
+            { name: "chompy mage", element: "life", image: "https://static.wikia.nocookie.net/skylanders/images/6/6b/Chompy_Mage_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052556" },
+            { name: "dr. krankcase", element: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/5/56/Dr._Krankcase_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183852" },
+            { name: "golden queen", element: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/e/e7/Golden_Queen_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183639" },
+            { name: "grave clobber", element: "water", image: "https://static.wikia.nocookie.net/skylanders/images/3/36/Grave_Clobber_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052711" },
+            { name: "hood sickle", element: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/9/94/Hood_Sickle_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821184030" },
+            { name: "kaos", element: "kaos", image: "https://static.wikia.nocookie.net/skylanders/images/0/05/Kaos_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821184031" },
+            { name: "pain-yatta", element: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/2/26/Pain-Yatta_Icon.png/revision/latest/scale-to-width-down/90?cb=20161112052712" },
+            { name: "tae kwon crow", element: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/4/47/Tae_Kwon_Crow_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183851" },
+            { name: "wolfgang", element: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/f/f3/Wolfgang_Icon.png/revision/latest/scale-to-width-down/90?cb=20160821183638" }
+        ],
+        vehicles:   [
+            { name: "barrel blaster", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/4/41/Barrel_Blaster_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141541" },
+            { name: "burn-cycle", ftyp: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/5/59/Burn-Cycle_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141538" },
+            { name: "crypt crusher", ftyp: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/d/d0/Crypt_Crusher_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141319" },
+            { name: "gold rusher", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/c/c0/Gold_Rusher_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141539" },
+            { name: "hot streak", ftyp: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/f/fe/Hot_Streak_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141320" },
+            { name: "shark tank", ftyp: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/1/11/Shark_Tank_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141537" },
+            { name: "shield striker", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/2/22/Shield_Striker_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141322" },
+            { name: "thump truck", ftyp: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/1/18/Thump_Truck_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141320" },
+            { name: "tomb buggy", ftyp: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/4/43/Tomb_Buggy_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141537" },
+            { name: "buzz wing", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/4/4c/Buzz_Wing_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141319" },
+            { name: "clown cruiser", ftyp: "air", image: "https://static.wikia.nocookie.net/skylanders/images/4/4d/Clown_Cruiser_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141540" },
+            { name: "jet stream", ftyp: "air", image: "https://static.wikia.nocookie.net/skylanders/images/f/fe/Jet_Stream_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141536" },
+            { name: "sky slicer", ftyp: "air", image: "https://static.wikia.nocookie.net/skylanders/images/0/08/Sky_Slicer_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141318" },
+            { name: "stealth stinger", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/5/54/Stealth_Stinger_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141537" },
+            { name: "sun runner", ftyp: "light", image: "https://static.wikia.nocookie.net/skylanders/images/2/21/Sun_Runner_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141322" },
+            { name: "dive bomber", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/5/5c/Dive_Bomber_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141321" },
+            { name: "reef ripper", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/3/3f/Reef_Ripper_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141538" },
+            { name: "sea shadow", ftyp: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/0/09/Sea_Shadow_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141322" },
+            { name: "soda skimmer", ftyp: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/0/00/Soda_Skimmer_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141539" },
+            { name: "splatter splasher", ftyp: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/2/2d/Splatter_Splasher_symbol.png/revision/latest/scale-to-width-down/90?cb=20161210141321" }
+        ],
+        trap_villain:   [
+            { name: "bad juju", ftyp: "air", image: "https://static.wikia.nocookie.net/skylanders/images/f/fc/Bad_Juju_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225113" },
+            { name: "blaster-tron", ftyp: "light", image: "https://static.wikia.nocookie.net/skylanders/images/d/d4/Blaster-Tron_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225125" },
+            { name: "bomb shell", ftyp: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/b/b4/Bomb_Shell_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225126" },
+            { name: "bone chompy", ftyp: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/7/7a/Bone_Chompy_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225151" },
+            { name: "brawl & chain", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/2/25/Brawl_%26_Chain_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225150" },
+            { name: "brawlrus", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/2/27/Brawlrus_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225150" },
+            { name: "broccoli guy", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/1/14/Broccoli_Guy_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225138" },
+            { name: "bruiser cruiser", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/c/cc/Bruiser_Cruiser_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225139" },
+            { name: "buzzer beak", ftyp: "air", image: "https://static.wikia.nocookie.net/skylanders/images/8/8c/Buzzer_Beak_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225113" },
+            { name: "chef pepper jack", ftyp: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/8/81/Chef_Pepper_Jack_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223755" },
+            { name: "chill bill", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/1/11/Chill_Bill_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225151" },
+            { name: "chomp chest", ftyp: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/7/70/Chomp_Chest_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225114" },
+            { name: "chompy", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/7/7b/Chompy_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225139" },
+            { name: "chompy mage", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/0/0d/Chompy_Mage_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223756" },
+            { name: "cross crow", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/4/4b/Cross_Crow_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225152" },
+            { name: "cuckoo clocker", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/5/57/Cuckoo_Clocker_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225140" },
+            { name: "dr. krankcase", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/6/68/Dr._Krankcase_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223756" },
+            { name: "dreamcatcher", ftyp: "air", image: "https://static.wikia.nocookie.net/skylanders/images/4/43/Dreamcatcher_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223757" },
+            { name: "eye five", ftyp: "light", image: "https://static.wikia.nocookie.net/skylanders/images/e/e5/Eye_Five_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225126" },
+            { name: "eye scream", ftyp: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/a/a1/Eye_Scream_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225114" },
+            { name: "fisticuffs", ftyp: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/8/8e/Fisticuffs_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225116" },
+            { name: "golden queen", ftyp: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/b/be/Golden_Queen_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223757" },
+            { name: "grave clobber", ftyp: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/2/28/Grave_Clobber_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225114" },
+            { name: "grinnade", ftyp: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/9/9a/Grinnade_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225127" },
+            { name: "hood sickle", ftyp: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/b/b6/Hood_Sickle_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225152" },
+            { name: "kaos", ftyp: "kaos", image: "https://static.wikia.nocookie.net/skylanders/images/7/76/Kaos_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223758" },
+            { name: "krankenstein", ftyp: "air", image: "https://static.wikia.nocookie.net/skylanders/images/d/d7/Krankenstein_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225115" },
+            { name: "lob goblin", ftyp: "light", image: "https://static.wikia.nocookie.net/skylanders/images/0/03/Lob_Goblin_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225127" },
+            { name: "luminous", ftyp: "light", image: "https://static.wikia.nocookie.net/skylanders/images/d/d8/Luminous_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223758" },
+            { name: "mab lobs", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/5/5d/Mab_Lobs_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225140" },
+            { name: "masker mind", ftyp: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/9/92/Masker_Mind_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225152" },
+            { name: "nightshade", ftyp: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/c/c9/Nightshade_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223758" },
+            { name: "pain-yatta", ftyp: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/d/d6/Pain-Yatta_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225127" },
+            { name: "rage mage", ftyp: "magic", image: "https://static.wikia.nocookie.net/skylanders/images/7/70/Rage_Mage_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225128" },
+            { name: "shield shredder", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/f/ff/Shield_Shredder_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225141" },
+            { name: "scrap shooter", ftyp: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/f/f7/Scrap_Shooter_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225129" },
+            { name: "sheep creep", ftyp: "life", image: "https://static.wikia.nocookie.net/skylanders/images/7/70/Sheep_Creep_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225141" },
+            { name: "shrednaught", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/0/0a/Shrednaught_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225141" },
+            { name: "slobber trap", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/1/11/Slobber_Trap_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225153" },
+            { name: "smoke scream", ftyp: "fire", image: "https://static.wikia.nocookie.net/skylanders/images/9/95/Smoke_Scream_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225128" },
+            { name: "tae kwon crow", ftyp: "dark", image: "https://static.wikia.nocookie.net/skylanders/images/9/91/Tae_Kwon_Crow_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225115" },
+            { name: "the gulper", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/2/27/Gulper_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223759" },
+            { name: "threatpack", ftyp: "water", image: "https://static.wikia.nocookie.net/skylanders/images/c/cc/Threatpack_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225153" },
+            { name: "trolling thunder", ftyp: "tech", image: "https://static.wikia.nocookie.net/skylanders/images/3/3c/Trolling_Thunder_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225138" },
+            { name: "tussle sprout", ftyp: "earth", image: "https://static.wikia.nocookie.net/skylanders/images/d/d0/Tussle_Sprout_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130225116" },
+            { name: "wolfgang", ftyp: "undead", image: "https://static.wikia.nocookie.net/skylanders/images/d/de/Wolfgang_Villain_Icon.png/revision/latest/scale-to-width-down/90?cb=20171130223759" }
+        ]
+    };
+
+    const includeGroups = [
+    "spyros_adventure",
+    "giants",
+    "swap_force",
+    "trap_team",
+    "superchargers",
+    "imaginators"
+];
+
+skylandersData.gll = includeGroups.flatMap(
+    group => skylandersData[group] || []
+);
+
+ function getSkylandersByElement(el) {
+   const seen = new Map();
+   Object.values(skylandersData).forEach(list => {
+     list.forEach(s => {
+       if (s.element === el && !seen.has(s.name)) seen.set(s.name, s);
+     });
+   });
+   return [...seen.values()];
+ }
+
+    const generationDisplayNames = {
+        gll: "All Skylanders",
+        spyros_adventure: "Spyro's Adventure",
+        giants: "Giants",
+        swap_force: "Swap Force",
+        trap_team: "Trap Team",
+        superchargers: "SuperChargers",
+        imaginators: "Imaginators",
+        vehicles: "Vehicles",
+        trap_villain: "Trappable Villains",
+        earth: "Earth", air: "Air", fire: "Fire", water: "Water",
+        magic: "Magic", tech: "Tech", life: "Life", undead: "Undead",
+        light: "Light", dark: "Dark", kaos: "Kaos"
+    };
+
+console.log(skylandersData.gll);
+
+    let currentGeneration = "gll"; 
+    let activeRoster = skylandersData[currentGeneration];
+    let guessedSkylanders = [];
+    let timeLeft = 120;
+    let gameTime = 120;
+    let timerMode = "countdown";
+    let elapsedTime = 0;
+    let timerInterval;
+    let gameActive = false;
+    let gamePaused = false;
+
+    const inputField = document.getElementById('guessInput');
+    const scoreDisplay = document.getElementById('score');
+    const totalDisplay = document.getElementById('total');
+    const timerDisplay = document.getElementById('timer');
+    const foundListDisplay = document.getElementById('foundList');
+    const startBtn = document.getElementById('startBtn');
+    const giveUpBtn = document.getElementById('giveUpBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+
+    totalDisplay.innerText = activeRoster.length;
+
+    function normalize(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+    }
+
+    function toTitleCase(name) {
+        return name
+            .toLowerCase()
+            .replace(/(^|[\s-])([a-z0-9])/g, (match, separator, char) => separator + char.toUpperCase());
+    }
+
+
+
+    function changeGeneration(genName, buttonElement) {
+        clearInterval(timerInterval);
+        gameActive = false;
+        inputField.disabled = true;
+        inputField.value = "";
+        inputField.placeholder = "Select a generation and press start...";
+        startBtn.innerText = "Start Game";
+        giveUpBtn.disabled = true;
+        pauseBtn.disabled = true;
+        const activeBtn = document.querySelector('.filter-btn.active, .element-btn.active');
+        if (activeBtn) activeBtn.classList.remove('playing');
+
+        currentGeneration = genName;
+        activeRoster = skylandersData[genName];
+        
+        totalDisplay.innerText = activeRoster.length;
+        const titleEl = document.getElementById('quizTitle');
+        if (titleEl) titleEl.innerText = generationDisplayNames[genName] || "Quiz";
+        scoreDisplay.innerText = "0";
+        buildBoard();
+        timerDisplay.innerText = formatTime(gameTime * 60);
+        timerMode = "countdown";
+updateTimerLabel();
+
+
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        if (buttonElement) buttonElement.classList.add('active');
+    }
+
+    function showElementsScreen() {
+        document.getElementById('homeScreen').classList.add('hidden');
+        document.getElementById('elementsScreen').classList.remove('hidden');
+    }
+
+    function backToHomeFromElements() {
+        document.getElementById('elementsScreen').classList.add('hidden');
+        document.getElementById('homeScreen').classList.remove('hidden');
+    }
+
+    function getSkylandersByElement(el) {
+        const seen = new Map();
+        Object.values(skylandersData).forEach(list => {
+            if (!Array.isArray(list)) return;
+            list.forEach(s => {
+                if (s && s.element === el && !seen.has(s.name)) {
+                    seen.set(s.name, s);
+                }
+            });
+        });
+        return [...seen.values()];
+    }
+
+    const elementDisplayNames = {
+        earth: "Earth", air: "Air", fire: "Fire", water: "Water",
+        magic: "Magic", tech: "Tech", life: "Life", undead: "Undead",
+        light: "Light", dark: "Dark", kaos: "Kaos"
+    };
+
+    let selectedElement = null;
+    let selectedElementBtn = null;
+
+    function startElementQuiz(elName, buttonElement) {
+        if (selectedElementBtn === buttonElement) {
+            buttonElement.classList.remove('active');
+            selectedElement = null;
+            selectedElementBtn = null;
+            return;
+        }
+        document.querySelectorAll('.element-btn.active').forEach(btn => {
+            btn.classList.remove('active', 'playing');
+        });
+        buttonElement.classList.add('active');
+        selectedElement = elName;
+        selectedElementBtn = buttonElement;
+    }
+
+    function startElementGame() {
+        if (!selectedElement || !selectedElementBtn) {
+            showTypeToast("Please select an element first.");
+            return;
+        }
+        clearInterval(timerInterval);
+        gameActive = false;
+        inputField.disabled = true;
+        inputField.value = "";
+        inputField.placeholder = "Press start to begin...";
+        startBtn.innerText = "Start Game";
+        giveUpBtn.disabled = true;
+
+        document.querySelectorAll('.filter-btn.active').forEach(btn => {
+            btn.classList.remove('active', 'playing');
+        });
+
+        currentGeneration = selectedElement;
+        activeRoster = getSkylandersByElement(selectedElement);
+        totalDisplay.innerText = activeRoster.length;
+
+        const titleEl = document.getElementById('quizTitle');
+        if (titleEl) titleEl.innerText = "Element: " + (elementDisplayNames[selectedElement] || selectedElement);
+
+        scoreDisplay.innerText = "0";
+        buildBoard();
+        timerDisplay.innerText = formatTime(gameTime * 60);
+        timerMode = "countdown";
+        updateTimerLabel();
+
+        document.getElementById('elementsScreen').classList.add('hidden');
+        startGame();
+    }
+
+    function updateTimerLabel() {
+        const label = document.getElementById('timerLabel');
+        const toggle = document.getElementById('timerToggle');
+
+        if (label && toggle) {
+            label.innerText = toggle.checked ? 'Time Left' : 'Time Spent';
+        }
+    }
+    
+    function formatTime(seconds) {
+    let hrs = Math.floor(seconds / 3600);
+    let mins = Math.floor((seconds % 3600) / 60);
+    let secs = seconds % 60;
+
+    return (
+        String(hrs).padStart(2, "0") + ":" +
+        String(mins).padStart(2, "0") + ":" +
+        String(secs).padStart(2, "0")
+    );
+    }
+
+function startGame() {
+    clearInterval(timerInterval);
+    guessedSkylanders = [];
+
+    document.getElementById('homeScreen').classList.add('hidden');
+    document.getElementById('quizScreen').classList.remove('hidden');
+    document.getElementById('siteFootnote').classList.remove('hidden');
+
+    const isCountdown = document.getElementById("timerToggle").checked;
+    timerMode = isCountdown ? "countdown" : "stopwatch";
+    updateTimerLabel();
+
+    gameTime = parseInt(document.getElementById("timeInput").value);
+    if (isNaN(gameTime) || gameTime < 1) gameTime = 2;
+    timeLeft = gameTime * 60;
+
+    gameActive = true;
+    buildBoard();
+    scoreDisplay.innerText = "0";
+
+    inputField.disabled = false;
+    inputField.value = "";
+    inputField.placeholder = "Type a Skylander name...";
+    inputField.focus();
+
+    startBtn.innerText = "Restart";
+    giveUpBtn.disabled = false;
+    setTypeShuffle(false);
+    refreshShuffleButton();
+    document.querySelector('.filter-btn.active, .element-btn.active')?.classList.add('playing');
+
+    pauseBtn.disabled = false;
+    gamePaused = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
+
+    if (timerMode === "stopwatch") elapsedTime = 0;
+    runTimer();
+}
+
+function runTimer() {
+    clearInterval(timerInterval);
+    if (timerMode === "countdown") {
+        timerDisplay.innerText = formatTime(timeLeft);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.innerText = formatTime(timeLeft);
+            if (timeLeft <= 0) endGame(false);
+        }, 1000);
+    } else {
+        timerDisplay.innerText = formatTime(elapsedTime);
+        timerInterval = setInterval(() => {
+            elapsedTime++;
+            timerDisplay.innerText = formatTime(elapsedTime);
+        }, 1000);
+    }
+}
+
+function pauseGame() {
+    if (!gameActive || gamePaused) return;
+    gamePaused = true;
+    clearInterval(timerInterval);
+    inputField.disabled = true;
+    document.getElementById('pauseOverlay').classList.remove('hidden');
+}
+
+function resumeGame() {
+    if (!gamePaused) return;
+    gamePaused = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
+    if (gameActive) {
+        inputField.disabled = false;
+        inputField.focus();
+        runTimer();
+    }
+}
+
+function quitFromPause() {
+    gamePaused = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
+    backToHome();
+}
+
+function saveGame() {
+    const data = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        currentGeneration,
+        rosterNames: activeRoster.map(s => s.name),
+        quizTitle: document.getElementById('quizTitle').innerText,
+        guessedSkylanders,
+        timerMode,
+        timeLeft,
+        elapsedTime,
+        gameTime
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `skylanders-quiz-${currentGeneration}-${Date.now()}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function loadGameFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            applySave(JSON.parse(reader.result));
+        } catch (e) {
+            showTypeToast("That file could not be read as a Skylanders Quiz save.");
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+}
+
+function applySave(data) {
+    if (!data || !Array.isArray(data.rosterNames)) {
+        showTypeToast("That save file is missing quiz data.");
+        return;
+    }
+    clearInterval(timerInterval);
+    
+    const byName = new Map();
+    Object.values(skylandersData).forEach(list => {
+        if (!Array.isArray(list)) return;
+        list.forEach(s => { if (s && !byName.has(s.name)) byName.set(s.name, s); });
+    });
+    activeRoster = data.rosterNames.map(n => byName.get(n) || { name: n });
+
+    currentGeneration = data.currentGeneration || currentGeneration;
+    guessedSkylanders = Array.isArray(data.guessedSkylanders) ? data.guessedSkylanders.slice() : [];
+    timerMode = data.timerMode === "stopwatch" ? "stopwatch" : "countdown";
+    gameTime = data.gameTime || gameTime;
+    timeLeft = typeof data.timeLeft === "number" ? data.timeLeft : gameTime * 60;
+    elapsedTime = typeof data.elapsedTime === "number" ? data.elapsedTime : 0;
+
+    document.getElementById('timerToggle').checked = (timerMode === "countdown");
+    document.getElementById('timeInput').value = gameTime;
+    updateTimerLabel();
+
+    document.getElementById('homeScreen').classList.add('hidden');
+    document.getElementById('elementsScreen').classList.add('hidden');
+    document.getElementById('quizScreen').classList.remove('hidden');
+    document.getElementById('siteFootnote').classList.remove('hidden');
+    const titleEl = document.getElementById('quizTitle');
+    if (titleEl && data.quizTitle) titleEl.innerText = data.quizTitle;
+
+    totalDisplay.innerText = activeRoster.length;
+    buildBoard();
+    guessedSkylanders.forEach(key => flipCard(key, false));
+    scoreDisplay.innerText = guessedSkylanders.length;
+
+    gameActive = true;
+    gamePaused = false;
+    startBtn.innerText = "Restart";
+    giveUpBtn.disabled = false;
+    pauseBtn.disabled = false;
+    inputField.disabled = false;
+    inputField.value = "";
+    inputField.placeholder = "Type a Skylander name...";
+    setTypeShuffle(false);
+    refreshShuffleButton();
+    timerDisplay.innerText = formatTime(timerMode === "countdown" ? timeLeft : elapsedTime);
+    document.getElementById('pauseOverlay').classList.add('hidden');
+    inputField.focus();
+    runTimer();
+}
+
+function backToHome() {
+    clearInterval(timerInterval);
+    gameActive = false;
+    guessedSkylanders = [];
+    inputField.disabled = true;
+    inputField.value = "";
+    giveUpBtn.disabled = true;
+    pauseBtn.disabled = true;
+    setTypeShuffle(false);
+    refreshShuffleButton();
+    gamePaused = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
+    foundListDisplay.innerHTML = "";
+    scoreDisplay.innerText = "0";
+    const activeBtn = document.querySelector('.filter-btn.active, .element-btn.active');
+    if (activeBtn) activeBtn.classList.remove('playing');
+    startBtn.innerText = "Start Game";
+    document.getElementById('quizScreen').classList.add('hidden');
+    document.getElementById('homeScreen').classList.remove('hidden');
+    document.getElementById('siteFootnote').classList.add('hidden');
+    window.scrollTo(0, 0);
+}
+
+    inputField.addEventListener('input', () => {
+        if (!gameActive || gamePaused) return;
+
+        updateShuffleGhost();
+
+        const processedInput = normalize(inputField.value);
+        if (!processedInput) return;
+
+        const match = activeRoster.find(s => normalize(s.name) === processedInput);
+        if (!match) return;
+
+        const processedName = normalize(match.name);
+        if (guessedSkylanders.includes(processedName)) return;
+
+        if (shuffleOn && shuffleElement && getItemElement(match) !== shuffleElement) {
+            showTypeToast(toTitleCase(match.name) + " is not " + shuffleElementName());
+            return;
+        }
+
+        guessedSkylanders.push(processedName);
+        flipCard(processedName, false);
+        scoreDisplay.innerText = guessedSkylanders.length;
+
+        if (processedName === normalize("kaos") && currentGeneration !== "kaos") {
+            showTypeToast("It is I, KAOOOOOOOS!");
+        }
+        if (match.quote) showTypeToast(match.quote);
+
+        inputField.value = "";
+        updateShuffleGhost();
+
+        if (guessedSkylanders.length === activeRoster.length) {
+            endGame(true);
+            return;
+        }
+
+        if (shuffleOn) pickShuffleElement();
+    });
+
+    function giveUp() {
+        endGame(false);
+    }
+
+function endGame(isWin) {
+    clearInterval(timerInterval);
+    gameActive = false;
+    inputField.disabled = true;
+    giveUpBtn.disabled = true;
+    pauseBtn.disabled = true;
+    setTypeShuffle(false);
+    refreshShuffleButton();
+    gamePaused = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
+
+    const activeBtn = document.querySelector('.filter-btn.active, .element-btn.active');
+    if (activeBtn) activeBtn.classList.remove('playing');
+
+    if (isWin) {
+        const overlay = document.getElementById("winOverlay");
+        const winText = document.getElementById("winText");
+        const isKaos = currentGeneration === "kaos";
+        winText.textContent = isKaos ? "POSER MASTER!" : "PORTAL MASTER!";
+        overlay.classList.remove("hidden");
+
+        // auto-hide after animation
+        setTimeout(() => {
+            overlay.classList.add("hidden");
+            showTypeToast(isKaos
+                ? "Behold! It is I, KAOS! And as you can see, I AM AWESOME!"
+                : "Amazing Portal Master! You named them all!");
+        }, 2500);
+
+    } else {
+        showTypeToast(`Game Over! You found ${guessedSkylanders.length} Skylanders.`);
+        revealMissed();
+    }
+}
+
+    function computeCardSize(count) {
+        // Largest card width (with 3/4 aspect ratio) that fits the visible
+        // grid area without scrolling. Capped at 200px (4x the All
+        // Skylanders quiz size).
+        const W = foundListDisplay.clientWidth - 12;  // padding
+        const H = foundListDisplay.clientHeight - 12;
+        const gap = 6;
+        let size = 200;
+        while (size > 20) {
+            const cols = Math.max(1, Math.floor((W + gap) / (size + gap)));
+            const rows = Math.ceil(count / cols);
+            if (rows * (size * 4 / 3) + (rows - 1) * gap <= H) break;
+            size -= 2;
+        }
+        return { size, gap, font: Math.max(7, Math.round(size * 0.14)) };
+    }
+
+    function setBoardScale(count) {
+        const { size, gap, font } = computeCardSize(count);
+        foundListDisplay.style.setProperty('--card-size', size + 'px');
+        foundListDisplay.style.setProperty('--card-gap', gap + 'px');
+        foundListDisplay.style.setProperty('--card-font', font + 'px');
+    }
+
+    window.addEventListener('resize', () => {
+        if (activeRoster && activeRoster.length) setBoardScale(activeRoster.length);
+    });
+
+    function buildBoard() {
+        foundListDisplay.innerHTML = "";
+        setBoardScale(activeRoster.length);
+        activeRoster.forEach(skylander => {
+            const processedName = normalize(skylander.name);
+            const imgSrc = skylander.image || `https://placehold.co/100x100?text=${encodeURIComponent(skylander.name)}`;
+            const card = document.createElement('div');
+            card.className = 'skylander-card';
+            card.dataset.key = processedName;
+            card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-face card-front">?</div>
+                    <div class="card-face card-back">
+                        <img src="${imgSrc}" alt="${skylander.name}" loading="lazy">
+                        <span>${toTitleCase(skylander.name)}</span>
+                    </div>
+                </div>
+            `;
+            foundListDisplay.appendChild(card);
+        });
+    }
+
+    function flipCard(key, missed) {
+        const card = foundListDisplay.querySelector(`.skylander-card[data-key="${key}"]`);
+        if (!card) return;
+        if (missed) card.classList.add('missed');
+        card.classList.add('flipped');
+    }
+
+    function revealMissed() {
+        activeRoster.forEach(skylander => {
+            const processedName = normalize(skylander.name);
+            if (!guessedSkylanders.includes(processedName)) {
+                flipCard(processedName, true);
+            }
+        });
+    }
+
+const ELEMENT_KEYS = ["earth","air","fire","water","magic","tech","life","undead","light","dark","kaos"];
+const elementColorMap = {
+    earth:  { bg: "#b1701f", border: "#975907" },
+    air:    { bg: "#3fbaf7", border: "#25a0f2" },
+    fire:   { bg: "#e61a1d", border: "#cc0101" },
+    water:  { bg: "#1b4c8d", border: "#023576" },
+    magic:  { bg: "#6f418a", border: "#592972" },
+    tech:   { bg: "#f5812b", border: "#e66b15" },
+    life:   { bg: "#18b125", border: "#01980c" },
+    undead: { bg: "#65636f", border: "#4e4c58" },
+    light:  { bg: "#fce14f", border: "#fac936" },
+    dark:   { bg: "#243d5c", border: "#0d2345" },
+    kaos:   { bg: "#493e71", border: "#31275a" }
+};
+const DEFAULT_BG = "#0097d5";
+const STANDARD_ELEMENTS = ["earth","air","fire","water","magic","tech","life","undead","light","dark"];
+const STANDARD_BG_COLORS = STANDARD_ELEMENTS.map(k => elementColorMap[k].bg);
+
+let shuffleOn = false;
+let shuffleElement = null;
+let typeToastTimer = null;
+let rainbowTimer = null;
+let rainbowIndex = 0;
+
+const shuffleBtn = document.getElementById('typeShuffleBtn');
+const shuffleGhost = document.getElementById('shuffleGhost');
+const typeToast = document.getElementById('typeToast');
+const quizContainer = document.querySelector('.container');
+
+function getItemElement(item) {
+    return (item && (item.element || item.ftyp)) || null;
+}
+
+function isElementQuiz() {
+    return ELEMENT_KEYS.includes(currentGeneration);
+}
+
+function remainingElements() {
+    const set = new Set();
+    activeRoster.forEach(s => {
+        if (guessedSkylanders.includes(normalize(s.name))) return;
+        const el = getItemElement(s);
+        if (el && (elementColorMap[el] || currentGeneration === 'custom')) set.add(el);
+    });
+    return [...set];
+}
+
+function pickShuffleElement() {
+    const options = remainingElements();
+    if (!options.length) {
+        setTypeShuffle(false);
+        return;
+    }
+    shuffleElement = options[Math.floor(Math.random() * options.length)];
+    applyShuffleVisuals();
+}
+
+function stopRainbow() {
+    if (rainbowTimer) { clearInterval(rainbowTimer); rainbowTimer = null; }
+}
+
+function startRainbow() {
+    if (rainbowTimer || !quizContainer) return;
+    rainbowIndex = 0;
+    quizContainer.style.background = STANDARD_BG_COLORS[0];
+    rainbowTimer = setInterval(() => {
+        rainbowIndex = (rainbowIndex + 1) % STANDARD_BG_COLORS.length;
+        quizContainer.style.background = STANDARD_BG_COLORS[rainbowIndex];
+    }, 2000);
+}
+
+function shuffleElementName() {
+    return elementDisplayNames[shuffleElement] || toTitleCase(shuffleElement);
+}
+
+function applyShuffleVisuals() {
+    const colors = shuffleOn && shuffleElement ? elementColorMap[shuffleElement] : null;
+    if (quizContainer) {
+        if (colors) {
+            stopRainbow();
+            quizContainer.style.background = colors.bg;
+        } else if (shuffleOn && shuffleElement) {
+            // custom element with no fixed color: slowly cycle through all 10 element colors
+            startRainbow();
+        } else {
+            stopRainbow();
+            quizContainer.style.background = DEFAULT_BG;
+        }
+    }
+    if (foundListDisplay) {
+        foundListDisplay.style.border = colors ? ("3px solid " + colors.border) : "none";
+    }
+    updateShuffleGhost();
+}
+
+function updateShuffleGhost() {
+    if (!shuffleGhost) return;
+    const empty = inputField.value.trim() === "";
+    if (shuffleOn && shuffleElement && empty) {
+        shuffleGhost.textContent = shuffleElementName();
+        shuffleGhost.classList.remove('hidden');
+    } else {
+        shuffleGhost.classList.add('hidden');
+    }
+}
+
+function setTypeShuffle(on) {
+    shuffleOn = on && !isElementQuiz();
+    if (shuffleOn) {
+        shuffleBtn.classList.add('on');
+        pickShuffleElement();
+        if (!shuffleOn) return;
+    } else {
+        shuffleElement = null;
+        shuffleBtn.classList.remove('on');
+        applyShuffleVisuals();
+    }
+}
+
+function toggleTypeShuffle() {
+    if (!gameActive || gamePaused || isElementQuiz()) return;
+    setTypeShuffle(!shuffleOn);
+    inputField.focus();
+}
+
+function refreshShuffleButton() {
+    if (!shuffleBtn) return;
+    const available = !isElementQuiz();
+    shuffleBtn.style.display = available ? "" : "none";
+    shuffleBtn.disabled = !available || !gameActive;
+}
+
+function showTypeToast(message) {
+    if (!typeToast) return;
+    typeToast.textContent = message;
+    typeToast.classList.remove('hidden');
+    clearTimeout(typeToastTimer);
+    const ms = Math.min(4000, Math.max(2000, message.length * 55));
+    typeToastTimer = setTimeout(() => typeToast.classList.add('hidden'), ms);
+}
+
+const elementColors = [
+    { bg: "#b1701f", border: "#975907" }, // Earth
+    { bg: "#3fbaf7", border: "#25a0f2" }, // Air
+    { bg: "#e61a1d", border: "#cc0101" }, // Fire
+    { bg: "#1b4c8d", border: "#023576" }, // Water
+    { bg: "#6f418a", border: "#592972" }, // Magic
+    { bg: "#f5812b", border: "#e66b15" }, // Tech
+    { bg: "#18b125", border: "#01980c" }, // Life
+    { bg: "#65636f", border: "#4e4c58" }, // Undead
+    { bg: "#fce14f", border: "#fac936" }, // Light
+    { bg: "#243d5c", border: "#0d2345" }, // Dark
+    { bg: "#493e71", border: "#31275a" }  // Kaos
+];
+
+const elementsBtn = document.getElementById("elementsBtn");
+let colorIndex = 0;
+
+function updateButtonColor() {
+    elementsBtn.style.backgroundColor = elementColors[colorIndex].bg;
+    elementsBtn.style.borderColor = elementColors[colorIndex].border;
+
+    colorIndex = (colorIndex + 1) % elementColors.length;
+}
+
+updateButtonColor();
+
+setInterval(updateButtonColor, 2000);
+</script>
+
+
+<script>
+function builderCardHtml() {
+    return '<button class="remove" title="Remove" onclick="this.parentElement.remove()">&times;</button>' +
+        '<label>Name</label><input class="b-name" type="text" placeholder="name">' +
+        '<label>Element</label><input class="b-element" type="text" placeholder="element (optional)">' +
+        '<label>Image address</label><input class="b-image" type="text" placeholder="https://... (optional)">' +
+        '<div class="preview"></div>' +
+        '<label>Quote</label><input class="b-quote" type="text" placeholder="pop-up quote (optional)">';
+}
+function addBuilderCard(item) {
+    const grid = document.getElementById('builderGrid');
+    const card = document.createElement('div');
+    card.className = 'builder-card';
+    card.innerHTML = builderCardHtml();
+    const img = card.querySelector('.b-image'), prev = card.querySelector('.preview');
+    img.addEventListener('input', () => {
+        prev.innerHTML = '';
+        if (img.value.trim()) { const i = document.createElement('img'); i.src = img.value.trim(); i.onerror = () => i.remove(); prev.appendChild(i); }
+    });
+    if (item && typeof item.name === 'string') {
+        card.querySelector('.b-name').value = item.name || '';
+        card.querySelector('.b-element').value = item.element || item.ftyp || '';
+        img.value = item.image || '';
+        card.querySelector('.b-quote').value = item.quote || (item.name.toLowerCase() === 'kaos' ? 'It is I, KAOOOOOOOS!' : '');
+        img.dispatchEvent(new Event('input'));
+    }
+    grid.insertBefore(card, document.getElementById('addCircle'));
+}
+function builderQuizOptions() {
+    const groups = ['gll', 'spyros_adventure', 'giants', 'swap_force', 'trap_team', 'superchargers', 'imaginators', 'vehicles', 'trap_villain'];
+    const options = groups.map(key => ({ title: generationDisplayNames[key], items: skylandersData[key] || [] }));
+    const builtInItems = groups.filter(key => key !== 'gll').flatMap(key => skylandersData[key] || []);
+    ['earth', 'air', 'fire', 'water', 'magic', 'tech', 'life', 'undead', 'light', 'dark', 'kaos'].forEach(element => {
+        options.push({ title: generationDisplayNames[element], items: builtInItems.filter(item => (item.element || item.ftyp) === element) });
+    });
+    if (skylandersData.custom) options.push({ title: generationDisplayNames.custom, items: skylandersData.custom });
+    return options;
+}
+function toggleBuilderQuizChoices() {
+    const choices = document.getElementById('builderQuizChoices');
+    const opening = choices.classList.contains('hidden');
+    choices.replaceChildren();
+    if (opening) builderQuizOptions().forEach(option => {
+        const button = document.createElement('button');
+        button.textContent = option.title;
+        button.onclick = () => importQuizIntoBuilder(option);
+        choices.appendChild(button);
+    });
+    choices.classList.toggle('hidden', !opening);
+    document.getElementById('addQuizBtn').setAttribute('aria-expanded', String(opening));
+}
+function importQuizIntoBuilder(option) {
+    const cards = [...document.querySelectorAll('.builder-card')];
+    const seen = new Set(cards.map(card => card.querySelector('.b-name').value.trim().toLowerCase()).filter(Boolean));
+    let added = 0;
+    option.items.forEach(item => {
+        const name = item.name.trim().toLowerCase();
+        if (!name || seen.has(name)) return;
+        seen.add(name);
+        addBuilderCard(item);
+        added++;
+    });
+    if (added) cards.forEach(card => {
+        if ([...card.querySelectorAll('input')].every(input => !input.value.trim())) card.remove();
+    });
+    document.getElementById('builderImportStatus').textContent = added ? `${option.title}: ${added} added` : 'These names are already in your quiz.';
+    document.getElementById('builderQuizChoices').classList.add('hidden');
+    document.getElementById('addQuizBtn').setAttribute('aria-expanded', 'false');
+}
+function openBuilder() {
+    const grid = document.getElementById('builderGrid');
+    if (!grid.children.length) {
+        const plus = document.createElement('button');
+        plus.id = 'addCircle'; plus.className = 'add-circle'; plus.textContent = '+'; plus.title = 'Add';
+        plus.onclick = addBuilderCard;
+        grid.appendChild(plus);
+        for (let i = 0; i < 3; i++) addBuilderCard();
+    }
+    document.getElementById('homeScreen').classList.add('hidden');
+    document.getElementById('builderScreen').classList.remove('hidden');
+}
+function closeBuilder() {
+    document.getElementById('builderScreen').classList.add('hidden');
+    document.getElementById('homeScreen').classList.remove('hidden');
+}
+function downloadCustomQuiz() {
+    const items = [...document.querySelectorAll('.builder-card')].map(c => ({
+        name: c.querySelector('.b-name').value.trim(),
+        element: c.querySelector('.b-element').value.trim().toLowerCase(),
+        image: c.querySelector('.b-image').value.trim(),
+        quote: c.querySelector('.b-quote').value.trim()
+    })).filter(i => i.name);
+    if (!items.length) { showTypeToast("Add at least one name first."); return; }
+    const title = document.getElementById('builderTitle').value.trim() || "Custom Quiz";
+    const blob = new Blob([JSON.stringify({ type: "custom-quiz", title, items }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = title.replace(/[^a-z0-9]+/gi, '_') + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+function loadCustomQuiz(event) {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        let data;
+        try { data = JSON.parse(reader.result); } catch (e) { showTypeToast("That file is not a valid quiz."); return; }
+        const items = Array.isArray(data.items) ? data.items.filter(i => i && i.name) : [];
+        if (!items.length) { showTypeToast("That quiz has no names in it."); return; }
+        skylandersData.custom = items.map(i => ({ name: String(i.name).toLowerCase(), element: String(i.element || "").toLowerCase().trim(), image: i.image || "", quote: i.quote || "" }));
+        generationDisplayNames.custom = data.title || "Custom Quiz";
+        changeGeneration('custom', null);
+        startGame();
+        inputField.placeholder = "Type a name...";
+    };
+    reader.readAsText(file);
+}
+</script>
+</body>
+</html>
